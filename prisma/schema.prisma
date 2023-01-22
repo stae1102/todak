@@ -11,11 +11,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Provider {
+  LOCAL
+  KAKAO
+  NAVER
+  GOOGLE
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   nickname  String   @db.VarChar(20)
   email     String   @unique @db.VarChar(100)
   password  String?  @db.Text
+  provider  Provider
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
