@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 데이터베이스 등록
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  LOCAL
+  KAKAO
+  NAVER
+  GOOGLE
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  nickname  String   @db.VarChar(20)
+  email     String   @unique @db.VarChar(100)
+  password  String?  @db.Text
+  provider  Provider
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 1:1 관계는 Prisma에서 ?를 붙여야 함
+  UserInfo UserInfo? @relation("USER_INFO")
+}
+
+model UserInfo {
+  UserId      Int      @id @map("user_id")
+  phoneNumber Int?     @map("phone_number")
+  address     String?  @db.Text
+  imageUrl    String?  @map("image_url") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // PFK
+  User User @relation("USER_INFO", fields: [UserId], references: [id])
+}
