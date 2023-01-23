@@ -1,13 +1,19 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
-import { SignupRequestDto } from './dtos';
+import { SignupRequestDto, SigninRequestDto } from './dtos';
+import axios from 'axios';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { RANDOMNICKNAME } from './constants/signup.constant';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async signup(signupRequestDto: SignupRequestDto) {
@@ -45,5 +51,29 @@ export class AuthService {
       }
       throw new BadRequestException();
     }
+  }
+
+  async signin(signinRequestDto: SigninRequestDto) {
+    // find the user by email
+    // if user does not exist throw exception
+    const exUser = await this.prisma.user.findUnique({
+      where: {
+        email: signinRequestDto.email,
+      },
+    });
+
+    if (!exUser) {
+      throw new NotFoundException('존재하지 않는 유저입니다.');
+    }
+
+    // compare password
+    const pwMatches = await argon.verify(exUser.password, signinRequestDto.password);
+
+    if (!pwMatches) {
+      throw new BadRequestException('비밀번호가 일치하지 않습니다.');
+    }
+
+    delete exUser.password;
+    return exUser;
   }
 
