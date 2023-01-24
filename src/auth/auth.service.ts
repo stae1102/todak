@@ -7,6 +7,7 @@ import axios from 'axios';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { RANDOMNICKNAME } from './constants/signup.constant';
 import { ConfigService } from '@nestjs/config';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -14,32 +15,20 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly userService: UserService,
   ) {}
 
   async signup(signupRequestDto: SignupRequestDto) {
     // generate the password hash
     const hashedPassword = await argon.hash(signupRequestDto.password);
 
-    // generate a nickname
-    if (!signupRequestDto.nickname) {
-      const nicknameRequest = await axios.get(RANDOMNICKNAME);
-      signupRequestDto.nickname = nicknameRequest.data;
-    }
-
     try {
       // save the new user in the database
-      const user = await this.prisma.user.create({
-        data: {
+      const user = await this.userService.createUser({
           email: signupRequestDto.email,
           password: hashedPassword,
           provider: 'LOCAL',
           nickname: signupRequestDto.nickname,
-        },
-        select: {
-          email: true,
-          nickname: true,
-          provider: true,
-        },
       });
       // return the saved user
       return user;
