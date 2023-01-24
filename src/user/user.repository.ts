@@ -13,4 +13,16 @@ export class UserRepository {
       select: { id: true },
     });
   }
+
+  async findUnique(email: string) {
+    return await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+      select: {
+        id: true,
+        password: true,
+      },
+    });
+  }
 }

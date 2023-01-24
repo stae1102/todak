@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
-import { SignupRequestDto, SigninRequestDto } from './dtos';
+import { SignupRequestDto } from './dtos';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
 import { ConfigService } from '@nestjs/config';
 import { EXPIRATION } from '../../libs/consts';
@@ -20,6 +20,22 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly authRepository: AuthRepository,
   ) {}
+
+  async validateUser(email: string, password: string) {
+    const exUser = await this.userService.findUser(email);
+
+    if (!exUser) {
+      throw new NotFoundException('존재하지 않는 유저입니다.');
+    }
+
+    const psMatches = await argon.verify(exUser.password, password);
+
+    if (!psMatches) {
+      throw new BadRequestException('비밀번호가 일치하지 않습니다.');
+    }
+
+    return exUser;
+  }
 
   async signup(signupRequestDto: SignupRequestDto) {
     // generate the password hash
@@ -45,29 +61,29 @@ export class AuthService {
     }
   }
 
-  async signin(signinRequestDto: SigninRequestDto) {
-    // find the user by email
-    // if user does not exist throw exception
-    const exUser = await this.prisma.user.findUnique({
-      where: {
-        email: signinRequestDto.email,
-      },
-    });
+  // async signin(signinRequestDto: SigninRequestDto) {
+  //   // find the user by email
+  //   // if user does not exist throw exception
+  //   const exUser = await this.prisma.user.findUnique({
+  //     where: {
+  //       email: signinRequestDto.email,
+  //     },
+  //   });
 
-    if (!exUser) {
-      throw new NotFoundException('존재하지 않는 유저입니다.');
-    }
+  //   if (!exUser) {
+  //     throw new NotFoundException('존재하지 않는 유저입니다.');
+  //   }
 
-    // compare password
-    const pwMatches = await argon.verify(exUser.password, signinRequestDto.password);
+  //   // compare password
+  //   const pwMatches = await argon.verify(exUser.password, signinRequestDto.password);
 
-    if (!pwMatches) {
-      throw new BadRequestException('비밀번호가 일치하지 않습니다.');
-    }
+  //   if (!pwMatches) {
+  //     throw new BadRequestException('비밀번호가 일치하지 않습니다.');
+  //   }
 
-    delete exUser.password;
-    return exUser;
-  }
+  //   delete exUser.password;
+  //   return exUser;
+  // }
 
   issueAccessToken(userId: number): string {
     return this.jwtService.sign(

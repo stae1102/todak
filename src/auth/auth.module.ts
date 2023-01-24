@@ -6,6 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from '../user/user.module';
 import { AuthRepository } from './auth.repository';
 import { RedisCacheModule } from '../config/redis-cache.module';
+import { LocalStrategy } from './strategies/local.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -21,6 +23,6 @@ import { RedisCacheModule } from '../config/redis-cache.module';
     RedisCacheModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository],
+  providers: [AuthService, AuthRepository, LocalStrategy, JwtStrategy],
 })
 export class AuthModule {}
