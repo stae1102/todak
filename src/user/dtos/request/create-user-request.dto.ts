@@ -1,7 +1,7 @@
 import { Provider } from '@prisma/client';
 import { IsEmail, IsEnum, IsString } from 'class-validator';
 
-export class CreateUserDto {
+export class CreateUserRequestDto {
   @IsEmail()
   email: string;
 
