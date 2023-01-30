@@ -3,9 +3,10 @@ import { User } from '@prisma/client';
 import { CookieOptions, Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { SignupRequestDto } from './dtos';
+import { SignupRequestDto } from './dtos/request/signup-request.dto';
 import { LoginResponseDto } from './dtos/response/login-response.dto';
 import { SignupResponseDto } from './dtos/response/signup-response.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Controller('auth')
@@ -40,5 +41,13 @@ export class AuthController {
     const responseDto: LoginResponseDto = { accessToken, id: user.id };
 
     response.cookie('refresh_token', refreshToken, cookieOptions).json(responseDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('signout')
+  async signout(@CurrentUser() user: User, @Res({ passthrough: true }) response: Response) {
+    await this.authService.delRefreshToken(String(user.id));
+
+    response.clearCookie('refresh_token');
   }
 }
